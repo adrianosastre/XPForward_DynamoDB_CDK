@@ -1,0 +1,104 @@
+{
+	"username": "adrianosastre",
+	"fullName": "Adriano Sastre Vieira",
+	"email": "adrianosastre@gmail.com",
+	"addresses": [
+		{
+			"home": "one"
+		},
+		{
+			"home": "two"
+		}
+	]
+}
+
+{
+	"username": "isabella",
+	"fullName": "Isabella Ferreira Vieira",
+	"email": "isabelafetufavieira@gmail.com",
+	"addresses": [
+		{
+			"home": "333"
+		},
+		{
+			"home": "444"
+		}
+	]
+}
+
+
+{
+	"username": "adrianosastre",
+	"status": "DELIVERED",
+	"items": [
+		{
+			"name": "iphone",
+			"value": 4800,
+			"quantity": 1
+		},
+		{
+			"name": "macbook",
+			"value": 15000,
+			"quantity": 1
+		}
+	]
+}
+
+{
+	"username": "adrianosastre",
+	"status": "ONGOING",
+	"items": [
+		{
+			"name": "cimento",
+			"value": 30,
+			"quantity": 10
+		},
+		{
+			"name": "cal",
+			"value": 13,
+			"quantity": 30
+		}
+	]
+}
+
+{
+	"username": "adrianosastre",
+	"status": "ONGOING",
+	"items": [
+		{
+			"name": "tinta",
+			"value": 100,
+			"quantity": 1
+		}
+	]
+}
+
+{
+	"username": "isabella",
+	"status": "INITIED",
+	"items": [
+		{
+			"name": "banana",
+			"value": 4,
+			"quantity": 3
+		},
+		{
+			"name": "pera",
+			"value": 1,
+			"quantity": 10
+		}
+	]
+}
+
+{
+	"username": "isabella",
+	"status": "ONGOING",
+	"items": [
+		{
+			"name": "batatinha",
+			"value": 3,
+			"quantity": 7
+		}
+	]
+}
+

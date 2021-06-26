@@ -1,21 +1,61 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import { XpForwardDynamoDbCdkStack } from '../lib/xp_forward_dynamo_db_cdk-stack';
+import { SingleTableDdbCdkStack } from '../lib/singleTableDdb_cdk-stack';
+import { UsersFunctionCdkStack } from '../lib/usersFunction_cdk-stack';
+import { OrdersFunctionCdkStack } from '../lib/ordersFunction_cdk-stack';
+import { ApiStack } from '../lib/api_cdk-stack';
 
 const app = new cdk.App();
-new XpForwardDynamoDbCdkStack(app, 'XpForwardDynamoDbCdkStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const singleTableDdbCdkStack = new SingleTableDdbCdkStack(
+  app,
+  'XP-SingleTableDdbCdkStack',
+  {
+    env: {
+      account: process.env.CDK_DEFAULT_ACCOUNT,
+      region: process.env.CDK_DEFAULT_REGION
+    },
+  }
+);
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+const usersFunctionCdkStack = new UsersFunctionCdkStack(
+  app,
+  'XP-UsersFunctionCdkStack',
+  singleTableDdbCdkStack.table,
+  {
+    env: {
+      account: process.env.CDK_DEFAULT_ACCOUNT,
+      region: process.env.CDK_DEFAULT_REGION
+    },
+  }
+);
+usersFunctionCdkStack.addDependency(singleTableDdbCdkStack);
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
+const ordersFunctionCdkStack = new OrdersFunctionCdkStack(
+  app,
+  'XP-OrdersFunctionCdkStack',
+  singleTableDdbCdkStack.table,
+  {
+    env: {
+      account: process.env.CDK_DEFAULT_ACCOUNT,
+      region: process.env.CDK_DEFAULT_REGION
+    },
+  }
+);
+ordersFunctionCdkStack.addDependency(singleTableDdbCdkStack);
+
+const apiStack = new ApiStack(
+  app,
+  'XP-ApiStack',
+  usersFunctionCdkStack.handler,
+  ordersFunctionCdkStack.handler,
+  {
+    env: {
+      account: process.env.CDK_DEFAULT_ACCOUNT,
+      region: process.env.CDK_DEFAULT_REGION
+    },
+  }
+);
+apiStack.addDependency(usersFunctionCdkStack);
+apiStack.addDependency(ordersFunctionCdkStack);
