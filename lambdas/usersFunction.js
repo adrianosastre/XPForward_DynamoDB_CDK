@@ -59,7 +59,7 @@ exports.handler = async function(event, context) {
 
         if (method === 'GET') {
             console.debug(`GET/${username} ...`);
-            const data = await getUserById(username);
+            const data = await getUser(username);
 
             if (data && data.Item) {
                 console.log(`GET/${username} will return 200 OK for user:`, data.Item);
@@ -78,7 +78,7 @@ exports.handler = async function(event, context) {
         }
         else if (method === 'PUT') {
             console.debug(`PUT/${username} ...`);
-            const data = await getUserById(username);
+            const data = await getUser(username);
 
             if (data && data.Item) {
                 const user = JSON.parse(event.body);
@@ -103,7 +103,7 @@ exports.handler = async function(event, context) {
         }
         else if (method === 'DELETE') {
             console.debug(`DELETE/${username} ...`);
-            const data = await getUserById(username);
+            const data = await getUser(username);
 
             if (data && data.Item) {
                 await deleteUser(username);
@@ -147,7 +147,7 @@ function getAllUsers() {
     }
 }
 
-function getUserById(username) {
+function getUser(username) {
     try {
         return ddbClient.get({
             TableName: singleTableDdb,

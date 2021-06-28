@@ -26,9 +26,9 @@ export class SingleTableDdbCdkStack extends cdk.Stack {
     });
 
     this.table.addGlobalSecondaryIndex({
-      indexName: 'statusIdx',
+      indexName: 'orderStatusIdx',
       partitionKey: {
-          name: 'status',
+          name: 'orderStatus',
           type: dynamodb.AttributeType.STRING
       },
       sortKey: {

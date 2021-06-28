@@ -31,7 +31,7 @@
 /orders/adrianosastre:
 
 {
-	"status": "DELIVERED",
+	"orderStatus": "DELIVERED",
 	"items": [
 		{
 			"name": "iphone",
@@ -47,7 +47,7 @@
 }
 
 {
-	"status": "ONGOING",
+	"orderStatus": "ONGOING",
 	"items": [
 		{
 			"name": "cimento",
@@ -63,7 +63,7 @@
 }
 
 {
-	"status": "ONGOING",
+	"orderStatus": "ONGOING",
 	"items": [
 		{
 			"name": "tinta",
@@ -76,7 +76,7 @@
 /orders/isabella:
 
 {
-	"status": "INITIED",
+	"orderStatus": "INITIED",
 	"items": [
 		{
 			"name": "banana",
@@ -92,7 +92,7 @@
 }
 
 {
-	"status": "ONGOING",
+	"orderStatus": "ONGOING",
 	"items": [
 		{
 			"name": "batatinha",

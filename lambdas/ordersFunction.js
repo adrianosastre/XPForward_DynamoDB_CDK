@@ -29,8 +29,19 @@ exports.handler = async function(event, context) {
 
     console.debug(`API Gateway Request Id: ${apiGwRequestId} , Lambda Request Id: ${lambdaRequestId}`);
 
+    const username = event.pathParameters.username;
+
+    const data = await getUser(username);
+    if (!data || !data.Item) {
+        console.warn(`Username ${username} not found! `);
+        return {
+            statusCode: 404,
+            body: JSON.stringify(`User ${username} not found`),
+        }
+    }
+    console.debug(`Username ${username} found, continuing ... `);
+
     if (event.resource === '/orders/{username}') {
-        const username = event.pathParameters.username;
         if (method === 'GET') {
             console.debug(`GET /orders/${username} ...`);
             const data = await getAllUserOrders(username);
@@ -58,7 +69,6 @@ exports.handler = async function(event, context) {
             };
         }
     } else if (event.resource === '/orders/{username}/status/{status}') {
-        const username = event.pathParameters.username;
         const status = event.pathParameters.status;
         if (method === 'GET') {
             console.debug(`GET /orders/${username}/status/${status} ...`);
@@ -71,7 +81,6 @@ exports.handler = async function(event, context) {
             }
         }
     } else if (event.resource === '/orders/{username}/{id}') {
-        const username = event.pathParameters.username;
         const orderId = event.pathParameters.id;
 
         if (method === 'GET') {
@@ -150,6 +159,20 @@ exports.handler = async function(event, context) {
     };
 };
 
+function getUser(username) {
+    try {
+        return ddbClient.get({
+            TableName: singleTableDdb,
+            Key: {
+                pk: `USER#`,
+                sk: `PROFILE#${username}`,
+            }
+        }).promise();
+    } catch (err) {
+        return err;
+    }
+}
+
 function getAllUserOrders(username) {
     try {
         const params = {
@@ -169,8 +192,8 @@ function getAllUserOrdersByStatus(username, status) {
     try {
         const params = {
             TableName: singleTableDdb,
-            IndexName: 'statusIdx',
-            KeyConditionExpression: 'status = :s, pk = :u',
+            IndexName: 'orderStatusIdx',
+            KeyConditionExpression: 'orderStatus = :s AND pk = :u',
             ExpressionAttributeValues: {
                 ':s': status,
                 ':u': `ORDER#${username}`,
@@ -203,7 +226,7 @@ function createOrder(order) {
             Item: {
                 pk: `ORDER#${order.username}`,
                 sk: `ORDER#${order.id}`,
-                status: order.status,
+                orderStatus: order.orderStatus,
                 items: order.items,
             },
         }).promise();
@@ -220,9 +243,9 @@ function updateOrder(order) {
                 pk: `ORDER#${order.username}`,
                 sk: `ORDER#${order.id}`,
             },
-            UpdateExpression: 'set status = :s, items = :i',
+            UpdateExpression: 'set orderStatus = :s, items = :i',
             ExpressionAttributeValues: {
-                ':s': order.status,
+                ':s': order.orderStatus,
                 ':i': order.items,
             },
             ReturnValues: 'UPDATED_NEW',
