@@ -1,3 +1,5 @@
+/users:
+
 {
 	"username": "adrianosastre",
 	"fullName": "Adriano Sastre Vieira",
@@ -26,9 +28,9 @@
 	]
 }
 
+/orders/adrianosastre:
 
 {
-	"username": "adrianosastre",
 	"status": "DELIVERED",
 	"items": [
 		{
@@ -45,7 +47,6 @@
 }
 
 {
-	"username": "adrianosastre",
 	"status": "ONGOING",
 	"items": [
 		{
@@ -62,7 +63,6 @@
 }
 
 {
-	"username": "adrianosastre",
 	"status": "ONGOING",
 	"items": [
 		{
@@ -73,8 +73,9 @@
 	]
 }
 
+/orders/isabella:
+
 {
-	"username": "isabella",
 	"status": "INITIED",
 	"items": [
 		{
@@ -91,7 +92,6 @@
 }
 
 {
-	"username": "isabella",
 	"status": "ONGOING",
 	"items": [
 		{

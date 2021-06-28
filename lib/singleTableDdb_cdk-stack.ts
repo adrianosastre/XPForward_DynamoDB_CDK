@@ -21,8 +21,8 @@ export class SingleTableDdbCdkStack extends cdk.Stack {
       },
       timeToLiveAttribute: 'ttl', // cada registro pode ter um time to live diferente!
       billingMode: dynamodb.BillingMode.PROVISIONED, // modo de cobrança sob demanda ou provisionado
-      readCapacity: 1, // capacidade de leitura e escrita inicial, unidade = operações de 400kb por segundo + requisições
-      writeCapacity: 1,
+      readCapacity: 3, // capacidade de leitura e escrita inicial, unidade = operações de 400kb por segundo + requisições
+      writeCapacity: 2,
     });
 
     this.table.addGlobalSecondaryIndex({
@@ -36,6 +36,8 @@ export class SingleTableDdbCdkStack extends cdk.Stack {
           type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL, // INCLUDE = select specific attributes, KEY_ONLY = somente a chave
+      readCapacity: 1,
+      writeCapacity: 1
     });
 
     const readScaling = this.table.autoScaleReadCapacity({
@@ -44,8 +46,8 @@ export class SingleTableDdbCdkStack extends cdk.Stack {
     });
     readScaling.scaleOnUtilization({
         targetUtilizationPercent: 50, // a partir de quantos % de utilização começa a reagir
-        //scaleInCooldown: cdk.Duration.seconds(60),
-        //scaleOutCooldown: cdk.Duration.seconds(60),
+        scaleInCooldown: cdk.Duration.seconds(30),
+        scaleOutCooldown: cdk.Duration.seconds(60),
     });
 
     const writeScaling = this.table.autoScaleWriteCapacity({
@@ -54,8 +56,8 @@ export class SingleTableDdbCdkStack extends cdk.Stack {
     });
     writeScaling.scaleOnUtilization({
         targetUtilizationPercent: 50, // a partir de quantos % de utilização começa a reagir
-        //scaleInCooldown: cdk.Duration.seconds(60), // tempo que espera para subir uma unidade de capacidade
-        //scaleOutCooldown: cdk.Duration.seconds(60),
+        scaleInCooldown: cdk.Duration.seconds(15), // tempo que espera para subir uma unidade de capacidade
+        scaleOutCooldown: cdk.Duration.seconds(45),
     });
   }
 }

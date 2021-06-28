@@ -29,51 +29,63 @@ exports.handler = async function(event, context) {
 
     console.debug(`API Gateway Request Id: ${apiGwRequestId} , Lambda Request Id: ${lambdaRequestId}`);
 
-    if (event.resource === '/orders') {
+    if (event.resource === '/orders/{username}') {
+        const username = event.pathParameters.username;
         if (method === 'GET') {
-            console.debug(`GET ...`);
-            const data = await getAllOrders();
-            console.debug(`GET data:`, data);
+            console.debug(`GET /orders/${username} ...`);
+            const data = await getAllUserOrders(username);
 
-            console.log(`GET will return 200 OK with ${data.Count} orders:`, data.Items);
+            console.log(`GET /orders/${username} will return 200 OK with ${data.Count} orders:`, data.Items);
             return {
                 statusCode: 200,
                 body: JSON.stringify(data.Items),
             }
         }
         else if (method === 'POST') {
-            console.debug(`POST ...`);
-            console.log(`event.requestContext.authorizer:`, event.requestContext.authorizer); // log de autorização, cognito
+            console.debug(`POST /orders/${username} ...`);
 
             const order = JSON.parse(event.body);
+            order.username = username;
             order.id = uuid.v4();
 
             const result = await createOrder(order);
 
-            console.log(`POST will return 201 CREATED for order:`, order);
+            console.log(`POST /orders/${username} will return 201 CREATED for order:`, order);
 
             return{
                 statusCode: 201,
                 body: JSON.stringify(order),
             };
         }
-    }
-    else if (event.resource === '/orders/{id}') {
+    } else if (event.resource === '/orders/{username}/status/{status}') {
+        const username = event.pathParameters.username;
+        const status = event.pathParameters.status;
+        if (method === 'GET') {
+            console.debug(`GET /orders/${username}/status/${status} ...`);
+            const data = await getAllUserOrdersByStatus(username, status);
+
+            console.log(`GET /orders/${username}/status/${status} will return 200 OK with ${data.Count} orders:`, data.Items);
+            return {
+                statusCode: 200,
+                body: JSON.stringify(data.Items),
+            }
+        }
+    } else if (event.resource === '/orders/{username}/{id}') {
+        const username = event.pathParameters.username;
         const orderId = event.pathParameters.id;
 
         if (method === 'GET') {
-            console.debug(`GET/${orderId} ...`);
-            const data = await getOrderById(orderId);
-            console.debug(`GET/${orderId} data:`, data);
+            console.debug(`GET /orders/${username}/${orderId} ...`);
+            const data = await getUserOrderById(username, orderId);
 
             if (data && data.Item) {
-                console.log(`GET/${orderId} will return 200 OK for order:`, data.Item);
+                console.log(`GET /orders/${username}/${orderId} will return 200 OK for order:`, data.Item);
 
                 return {
                     body: JSON.stringify(data.Item),
                 }
             } else {
-                console.log(`GET/${orderId} will return 404 NOT FOUND`);
+                console.log(`GET /orders/${username}/${orderId} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
@@ -82,25 +94,24 @@ exports.handler = async function(event, context) {
             }
         }
         else if (method === 'PUT') {
-            console.debug(`PUT/${orderId} ...`);
-            const data = await getOrderById(orderId);
+            console.debug(`PUT /orders/${username}/${orderId} ...`);
+            const data = await getUserOrderById(username, orderId);
 
             if (data && data.Item) {
                 const order = JSON.parse(event.body);
+                order.username = username;
                 order.id = orderId;
 
-                const result = updateOrder(orderId, order);
+                const result = await updateOrder(order);
 
-                console.debug(`PUT/${orderId} data:`, results[0]);
-
-                console.log(`PUT/${orderId} will return 200 OK for order:`, order);
+                console.log(`PUT /orders/${username}/${orderId} will return 200 OK for order:`, order);
 
                 return {
                     statusCode: 200,
                     body: JSON.stringify(order),
                 }
             } else {
-                console.warn(`PUT/${orderId} will return 404 NOT FOUND`);
+                console.warn(`PUT /orders/${username}/${orderId} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
@@ -109,21 +120,20 @@ exports.handler = async function(event, context) {
             }
         }
         else if (method === 'DELETE') {
-            console.debug(`DELETE/${orderId} ...`);
-            const data = await getOrderById(orderId);
+            console.debug(`DELETE /orders/${username}/${orderId} ...`);
+            const data = await getUserOrderById(orderId);
 
             if (data && data.Item) {
                 await deleteOrder(orderId);
-                console.debug(`DELETE/${orderId} data:`, data);
 
-                console.log(`DELETE/${orderId} will return 200 OK`);
+                console.log(`DELETE /orders/${username}/${orderId} will return 200 OK`);
 
                 return {
                     statusCode: 200,
                     body: JSON.stringify(`Order with id ${orderId} was deleted`),
                 }
             } else {
-                console.warn(`DELETE/${orderId} will return 404 NOT FOUND`);
+                console.warn(`DELETE /orders/${username}/${orderId} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
@@ -140,23 +150,45 @@ exports.handler = async function(event, context) {
     };
 };
 
-function getAllOrders() {
+function getAllUserOrders(username) {
     try {
-        return ddbClient.scan({
+        const params = {
             TableName: singleTableDdb,
-        })
-        .promise();
+            KeyConditionExpression: 'pk = :username',
+            ExpressionAttributeValues: {
+                ':username': `ORDER#${username}`
+            },
+        };
+        return ddbClient.query(params).promise();
     } catch (err) {
         return err;
     }
 }
 
-function getOrderById(orderId) {
+function getAllUserOrdersByStatus(username, status) {
+    try {
+        const params = {
+            TableName: singleTableDdb,
+            IndexName: 'statusIdx',
+            KeyConditionExpression: 'status = :s, pk = :u',
+            ExpressionAttributeValues: {
+                ':s': status,
+                ':u': `ORDER#${username}`,
+            },
+        };
+        return ddbClient.query(params).promise();
+    } catch (err) {
+        return err;
+    }
+}
+
+function getUserOrderById(username, orderId) {
     try {
         return ddbClient.get({
             TableName: singleTableDdb,
             Key: {
-                id: orderId
+                pk: `ORDER#${username}`,
+                sk: `ORDER#${orderId}`,
             }
         }).promise();
     } catch (err) {
@@ -180,19 +212,18 @@ function createOrder(order) {
     }
 }
 
-function updateOrder(orderId, order) {
+function updateOrder(order) {
     try {
         return ddbClient.update({
             TableName: singleTableDdb,
             Key: {
-                id: orderId,
+                pk: `ORDER#${order.username}`,
+                sk: `ORDER#${order.id}`,
             },
-            UpdateExpression: 'set productName = :n, code = :c, price = :p, model= :m',
+            UpdateExpression: 'set status = :s, items = :i',
             ExpressionAttributeValues: {
-                ':n': order.productName,
-                ':c': order.code,
-                ':p': order.price,
-                ':m': order.model,
+                ':s': order.status,
+                ':i': order.items,
             },
             ReturnValues: 'UPDATED_NEW',
         }).promise();
@@ -201,12 +232,13 @@ function updateOrder(orderId, order) {
     }
 }
 
-function deleteOrder(orderId) {
+function deleteOrder(username, orderId) {
     try {
         return ddbClient.delete({
             TableName: singleTableDdb,
             Key: {
-                id: orderId,
+                pk: `ORDER#${username}`,
+                sk: `ORDER#${orderId}`,
             }
         }).promise();
     } catch (err) {

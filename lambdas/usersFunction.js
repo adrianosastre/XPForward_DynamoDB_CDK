@@ -32,7 +32,6 @@ exports.handler = async function(event, context) {
         if (method === 'GET') {
             console.debug(`GET ...`);
             const data = await getAllUsers();
-            console.debug(`GET data:`, data);
 
             console.log(`GET will return 200 OK with ${data.Count} users:`, data.Items);
             return {
@@ -42,7 +41,6 @@ exports.handler = async function(event, context) {
         }
         else if (method === 'POST') {
             console.debug(`POST ...`);
-            console.log(`event.requestContext.authorizer:`, event.requestContext.authorizer); // log de autorização, cognito
 
             const user = JSON.parse(event.body);
 
@@ -56,76 +54,72 @@ exports.handler = async function(event, context) {
             };
         }
     }
-    else if (event.resource === '/users/{id}') {
-        const userId = event.pathParameters.id;
+    else if (event.resource === '/users/{username}') {
+        const username = event.pathParameters.username;
 
         if (method === 'GET') {
-            console.debug(`GET/${userId} ...`);
-            const data = await getUserById(userId);
-            console.debug(`GET/${userId} data:`, data);
+            console.debug(`GET/${username} ...`);
+            const data = await getUserById(username);
 
             if (data && data.Item) {
-                console.log(`GET/${userId} will return 200 OK for user:`, data.Item);
+                console.log(`GET/${username} will return 200 OK for user:`, data.Item);
 
                 return {
                     body: JSON.stringify(data.Item),
                 }
             } else {
-                console.log(`GET/${userId} will return 404 NOT FOUND`);
+                console.log(`GET/${username} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
-                    body: JSON.stringify(`User with id ${userId} not found`),
+                    body: JSON.stringify(`User ${username} not found`),
                 }
             }
         }
         else if (method === 'PUT') {
-            console.debug(`PUT/${userId} ...`);
-            const data = await getUserById(userId);
+            console.debug(`PUT/${username} ...`);
+            const data = await getUserById(username);
 
             if (data && data.Item) {
                 const user = JSON.parse(event.body);
-                user.id = userId;
+                user.username = username;
 
-                const result = updateUser(userId, user);
+                const result = await updateUser(user);
 
-                console.debug(`PUT/${userId} data:`, results[0]);
-
-                console.log(`PUT/${userId} will return 200 OK for user:`, user);
+                console.log(`PUT/${username} will return 200 OK for user:`, user);
 
                 return {
                     statusCode: 200,
                     body: JSON.stringify(user),
                 }
             } else {
-                console.warn(`PUT/${userId} will return 404 NOT FOUND`);
+                console.warn(`PUT/${username} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
-                    body: JSON.stringify(`User with id ${userId} not found`),
+                    body: JSON.stringify(`User ${username} not found`),
                 }
             }
         }
         else if (method === 'DELETE') {
-            console.debug(`DELETE/${userId} ...`);
-            const data = await getUserById(userId);
+            console.debug(`DELETE/${username} ...`);
+            const data = await getUserById(username);
 
             if (data && data.Item) {
-                await deleteUser(userId);
-                console.debug(`DELETE/${userId} data:`, data);
+                await deleteUser(username);
 
-                console.log(`DELETE/${userId} will return 200 OK`);
+                console.log(`DELETE/${username} will return 200 OK`);
 
                 return {
                     statusCode: 200,
-                    body: JSON.stringify(`User with id ${userId} was deleted`),
+                    body: JSON.stringify(`User ${username} was deleted`),
                 }
             } else {
-                console.warn(`DELETE/${userId} will return 404 NOT FOUND`);
+                console.warn(`DELETE/${username} will return 404 NOT FOUND`);
 
                 return {
                     statusCode: 404,
-                    body: JSON.stringify(`User with id ${userId} not found`),
+                    body: JSON.stringify(`User ${username} not found`),
                 }
             }
         }
@@ -140,21 +134,26 @@ exports.handler = async function(event, context) {
 
 function getAllUsers() {
     try {
-        return ddbClient.scan({
+        const params = {
             TableName: singleTableDdb,
-        })
-        .promise();
+            KeyConditionExpression: 'pk = :user',
+            ExpressionAttributeValues: {
+                ':user': `USER#`
+            },
+        };
+        return ddbClient.query(params).promise();
     } catch (err) {
         return err;
     }
 }
 
-function getUserById(userId) {
+function getUserById(username) {
     try {
         return ddbClient.get({
             TableName: singleTableDdb,
             Key: {
-                id: userId
+                pk: `USER#`,
+                sk: `PROFILE#${username}`,
             }
         }).promise();
     } catch (err) {
@@ -167,7 +166,7 @@ function createUser(user) {
         return ddbClient.put({
             TableName: singleTableDdb,
             Item: {
-                pk: `USER#${user.username}`,
+                pk: `USER#`,
                 sk: `PROFILE#${user.username}`,
                 fullName: user.fullName,
                 email: user.email,
@@ -179,19 +178,19 @@ function createUser(user) {
     }
 }
 
-function updateUser(userId, user) {
+function updateUser(user) {
     try {
         return ddbClient.update({
             TableName: singleTableDdb,
             Key: {
-                id: userId,
+                pk: `USER#`,
+                sk: `PROFILE#${user.username}`,
             },
-            UpdateExpression: 'set productName = :n, code = :c, price = :p, model= :m',
+            UpdateExpression: 'set fullName = :fn, email = :e, addresses= :a',
             ExpressionAttributeValues: {
-                ':n': user.productName,
-                ':c': user.code,
-                ':p': user.price,
-                ':m': user.model,
+                ':fn': user.fullName,
+                ':e': user.email,
+                ':a': user.addresses
             },
             ReturnValues: 'UPDATED_NEW',
         }).promise();
@@ -200,12 +199,13 @@ function updateUser(userId, user) {
     }
 }
 
-function deleteUser(userId) {
+function deleteUser(username) {
     try {
         return ddbClient.delete({
             TableName: singleTableDdb,
             Key: {
-                id: userId,
+                pk: `USER#`,
+                sk: `PROFILE#${username}`,
             }
         }).promise();
     } catch (err) {

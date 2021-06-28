@@ -40,15 +40,21 @@ export class ApiStack extends cdk.Stack {
             }
         });
 
-        const usersResource = api.root.addResource('users'); // add a resource in /
+        // USUÁRIOS:
+        // Listar todos os usuários
+        // Listar perfil (detalhes) de um usuário
+        // Adicionar usuário
+        // Editar usuário
+        // Deletar usuário
+
+        const usersResource = api.root.addResource('users');
         usersResource.addMethod('GET', usersFunctionIntegration);
         usersResource.addMethod('POST', usersFunctionIntegration);
 
-        const userResource = usersResource.addResource('{id}'); // add a resorce /products/{id}
+        const userResource = usersResource.addResource('{username}');
         userResource.addMethod('GET', usersFunctionIntegration);
         userResource.addMethod('PUT', usersFunctionIntegration);
         userResource.addMethod('DELETE', usersFunctionIntegration);
-
 
         const ordersFunctionIntegration = new apigateway.LambdaIntegration(ordersHandler, {
             requestTemplates: {
@@ -56,13 +62,25 @@ export class ApiStack extends cdk.Stack {
             }
         });
 
-        const ordersResource = api.root.addResource('orders'); // add a resource in /
-        ordersResource.addMethod('GET', ordersFunctionIntegration);
-        ordersResource.addMethod('POST', ordersFunctionIntegration);
+        // PEDIDOS:
+        // Listar todos os pedidos de um usuário *
+        // Listar pedidos de um usuário por status *
+        // Adicionar pedido de um usuário *
+        // Editar pedido de um usuário *
+        // Deletar pedido de um usuário
+        // Buscar itens de um pedido de um usuário *
 
-        const orderResource = ordersResource.addResource('{id}'); // add a resorce /products/{id}
-        orderResource.addMethod('GET', ordersFunctionIntegration);
-        orderResource.addMethod('PUT', ordersFunctionIntegration);
-        orderResource.addMethod('DELETE', ordersFunctionIntegration);
+        const ordersResource = api.root.addResource('orders');
+        const ordersUserResource = ordersResource.addResource('{username}'); // /orders/{username}
+        ordersUserResource.addMethod('GET', ordersFunctionIntegration); // todos os pedidos de um usuário
+        ordersUserResource.addMethod('POST', ordersFunctionIntegration); // adicionar pedido de um usuário
+
+        const ordersUserStatusResource = ordersUserResource.addResource('status').addResource('{status}'); // /orders/{username}/status/{status}
+        ordersUserStatusResource.addMethod('GET', ordersFunctionIntegration); // pedidos de um usuário por status
+
+        const orderResource = ordersUserResource.addResource('{id}'); // /orders/{username}/id/{id}
+        orderResource.addMethod('GET', ordersFunctionIntegration); // itens de um pedido de um usuário
+        orderResource.addMethod('PUT', ordersFunctionIntegration); // editar pedido de um usuário
+        orderResource.addMethod('DELETE', ordersFunctionIntegration); // deletar pedido de um usuário
     }
 }
