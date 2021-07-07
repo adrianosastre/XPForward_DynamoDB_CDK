@@ -1,45 +1,51 @@
 'use strict';
 
+/*
+  @adrianosastre
+  This is the class with the code to be executed every time the orders lambda is trigged.
+*/
+
 const AWS = require('aws-sdk');
 const AWSXRay = require('aws-xray-sdk-core');
 const uuid = require('uuid');
 
-// código a ser executado na inicialização do lambda:
+// code to be executed in the lambda initialization:
 
-const xRay = AWSXRay.captureAWS(require('aws-sdk')); // tudo o que acontecer dentro do SDK o xray captura e monitora: gera traces
+const xRay = AWSXRay.captureAWS(require('aws-sdk'));
 
 const singleTableDdb = process.env.SINGLE_TABLE_DDB;
 const awsRegion = process.env.AWS_REGION;
-
 
 AWS.config.update({
     region: awsRegion,
 });
 
-const ddbClient = new AWS.DynamoDB.DocumentClient(); // cliente que se conecta no dynamo
+const ddbClient = new AWS.DynamoDB.DocumentClient();
 
-// a partir daqui faz parte da invocação do lambda:
 exports.handler = async function(event, context) {
+
+    // code to be executed every time the lambda is triggered:
+
     console.debug('event:', event);
     console.debug('context:', context);
     const method = event.httpMethod;
 
-    const apiGwRequestId = event.requestContext.requestId; // request id da api gtw (chamou o lambda)
-    const lambdaRequestId = context.awsRequestId; // request id do lambda
+    const apiGwRequestId = event.requestContext.requestId;
+    const lambdaRequestId = context.awsRequestId;
 
     console.debug(`API Gateway Request Id: ${apiGwRequestId} , Lambda Request Id: ${lambdaRequestId}`);
 
     const username = event.pathParameters.username;
 
-    const data = await getUser(username);
-    if (!data || !data.Item) {
+    const userData = await getUser(username);
+    if (!userData || !userData.Item) {
         console.warn(`Username ${username} not found! `);
         return {
             statusCode: 404,
             body: JSON.stringify(`User ${username} not found`),
         }
     }
-    console.debug(`Username ${username} found, continuing ... `);
+    console.debug(`Username ${username} found, continuing ... `, userData);
 
     if (event.resource === '/orders/{username}') {
         if (method === 'GET') {
@@ -58,6 +64,8 @@ exports.handler = async function(event, context) {
             const order = JSON.parse(event.body);
             order.username = username;
             order.id = uuid.v4();
+            order.fullName = userData.Item.fullName;
+            order.address = userData.Item.addresses[0];
 
             const result = await createOrder(order);
 
@@ -110,6 +118,8 @@ exports.handler = async function(event, context) {
                 const order = JSON.parse(event.body);
                 order.username = username;
                 order.id = orderId;
+                order.fullName = userData.Item.fullName;
+                order.address = userData.Item.addresses[0];
 
                 const result = await updateOrder(order);
 
@@ -228,6 +238,8 @@ function createOrder(order) {
                 sk: `ORDER#${order.id}`,
                 orderStatus: order.orderStatus,
                 items: order.items,
+                fullName: order.fullName,
+                address: order.address,
             },
         }).promise();
     } catch (err) {
@@ -243,10 +255,12 @@ function updateOrder(order) {
                 pk: `ORDER#${order.username}`,
                 sk: `ORDER#${order.id}`,
             },
-            UpdateExpression: 'set orderStatus = :s, items = :i',
+            UpdateExpression: 'set orderStatus = :s, items = :i, fullName = :f, address: a',
             ExpressionAttributeValues: {
                 ':s': order.orderStatus,
                 ':i': order.items,
+                ':f': order.fullName,
+                ':a': order.address,
             },
             ReturnValues: 'UPDATED_NEW',
         }).promise();

@@ -3,6 +3,11 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as lambdaNodeJS from '@aws-cdk/aws-lambda-nodejs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 
+/*
+  @adrianosastre
+  This is the class responsible to create the CloudFormation stack that contains the lambda resource responsible to handle the orders.
+  It is integrated to the dynamoDB table.
+*/
 export class OrdersFunctionCdkStack extends cdk.Stack {
   readonly handler: lambdaNodeJS.NodejsFunction;
 

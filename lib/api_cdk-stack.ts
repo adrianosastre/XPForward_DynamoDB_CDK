@@ -3,6 +3,13 @@ import * as lambdaNodeJS from '@aws-cdk/aws-lambda-nodejs';
 import * as apigateway from '@aws-cdk/aws-apigateway';
 import * as cwlogs from '@aws-cdk/aws-logs';
 
+/*
+  @adrianosastre
+  This is the class responsible to create the CloudFormation stack that contains the api gateway resource responsible to 
+  configure the /users and /orders endpoints.
+  It is integrated to the respective lambda functions.
+*/
+
 export class ApiStack extends cdk.Stack {
 
     constructor(

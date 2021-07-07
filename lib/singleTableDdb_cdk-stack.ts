@@ -2,6 +2,11 @@ import * as cdk from '@aws-cdk/core';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import { RemovalPolicy } from '@aws-cdk/core';
 
+/*
+  @adrianosastre
+  This is the class responsible to create the CloudFormation stack that contains the DynamoDB table resource.
+*/
+
 export class SingleTableDdbCdkStack extends cdk.Stack {
   readonly table: dynamodb.Table;
 

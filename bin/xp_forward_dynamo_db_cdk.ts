@@ -6,6 +6,13 @@ import { UsersFunctionCdkStack } from '../lib/usersFunction_cdk-stack';
 import { OrdersFunctionCdkStack } from '../lib/ordersFunction_cdk-stack';
 import { ApiStack } from '../lib/api_cdk-stack';
 
+/*
+  @adrianosastre
+  This is the main file that is responsible to instantiate the stack classes and deploy to AWS CloudFormation.
+  It is configured int he cdk.json file to be executed when the command 'cdk' is typed.
+  It is important to pay attention to the stacks dependencies.
+*/
+
 const app = new cdk.App();
 
 const singleTableDdbCdkStack = new SingleTableDdbCdkStack(

@@ -3,6 +3,11 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as lambdaNodeJS from '@aws-cdk/aws-lambda-nodejs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 
+/*
+  @adrianosastre
+  This is the class responsible to create the CloudFormation stack that contains the lambda resource responsible to handle the users.
+  It is integrated to the dynamoDB table.
+*/
 export class UsersFunctionCdkStack extends cdk.Stack {
   readonly handler: lambdaNodeJS.NodejsFunction;
 
@@ -29,7 +34,7 @@ export class UsersFunctionCdkStack extends cdk.Stack {
       },
     });
 
-    singleTableDdb.grantReadWriteData(this.handler); // dar permissão ao lambda para ler/escrever na tabela
+    singleTableDdb.grantReadWriteData(this.handler);
 
   }
 }

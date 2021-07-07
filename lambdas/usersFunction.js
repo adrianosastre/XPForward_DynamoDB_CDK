@@ -1,11 +1,16 @@
 'use strict';
 
+/*
+  @adrianosastre
+  This is the class with the code to be executed every time the orders lambda is trigged.
+*/
+
 const AWS = require('aws-sdk');
 const AWSXRay = require('aws-xray-sdk-core');
 
-// código a ser executado na inicialização do lambda:
+// code to be executed in the lambda initialization:
 
-const xRay = AWSXRay.captureAWS(require('aws-sdk')); // tudo o que acontecer dentro do SDK o xray captura e monitora: gera traces
+const xRay = AWSXRay.captureAWS(require('aws-sdk'));
 
 const singleTableDdb = process.env.SINGLE_TABLE_DDB;
 const awsRegion = process.env.AWS_REGION;
@@ -15,16 +20,18 @@ AWS.config.update({
     region: awsRegion,
 });
 
-const ddbClient = new AWS.DynamoDB.DocumentClient(); // cliente que se conecta no dynamo
+const ddbClient = new AWS.DynamoDB.DocumentClient();
 
-// a partir daqui faz parte da invocação do lambda:
 exports.handler = async function(event, context) {
+
+    // code to be executed every time the lambda is triggered:
+
     console.debug('event:', event);
     console.debug('context:', context);
     const method = event.httpMethod;
 
-    const apiGwRequestId = event.requestContext.requestId; // request id da api gtw (chamou o lambda)
-    const lambdaRequestId = context.awsRequestId; // request id do lambda
+    const apiGwRequestId = event.requestContext.requestId;
+    const lambdaRequestId = context.awsRequestId;
 
     console.debug(`API Gateway Request Id: ${apiGwRequestId} , Lambda Request Id: ${lambdaRequestId}`);
 
